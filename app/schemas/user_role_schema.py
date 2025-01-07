@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr
 from typing import Any, Optional
 
 class UserCreate(BaseModel):
+    name: Optional[str]
     email: EmailStr
     password: str
 

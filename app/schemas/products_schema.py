@@ -10,6 +10,8 @@ class ProductBase(BaseModel):
     description: str
     stock_available: int
     units_sold: int
+    demand_forecast: Optional[int]
+    optimized_price: Optional[int]
 
     class Config:
         orm_mode = True

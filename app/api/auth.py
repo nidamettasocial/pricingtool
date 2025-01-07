@@ -35,7 +35,7 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             detail="Email already registered",
         )
     hashed_password = get_password_hash(user.password)
-    new_user = User(email=user.email, hashed_password=hashed_password)
+    new_user = User(email=user.email, hashed_password=hashed_password, full_name = user.name)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
@@ -107,7 +107,7 @@ def login(form_data: UserCreate, db: Session = Depends(get_db)):
     #         detail="Email not verified. Please verify your email to proceed.",
     #     )
     access_token = create_access_token(
-        data={"sub": user.email},
+        data={"sub": user.email, "full_name" : user.full_name},
         expires_delta=datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES),
     )
     return {"access_token": access_token, "token_type": "bearer"}
