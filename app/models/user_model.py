@@ -1,6 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from app.config import Base
 
 class User(Base):
@@ -10,5 +8,5 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String, index=True, nullable=True)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, ForeignKey("roles.name"), default="buyer")
+    role = Column(String, ForeignKey("roles.name"), default="admin")
     verified = Column(Boolean, default=True)

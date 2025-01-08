@@ -1,9 +1,6 @@
-import datetime
 from sqlalchemy import Column, Integer, String, DateTime
 from app.config import Base
-from sqlalchemy import create_engine, Column, Integer, String, Numeric, Text, TIMESTAMP, Index
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy import Column, Integer, String, Numeric, Text, Index
 from sqlalchemy.sql import func
 
 

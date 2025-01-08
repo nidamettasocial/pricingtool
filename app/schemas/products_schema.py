@@ -1,5 +1,5 @@
-from pydantic import BaseModel, EmailStr
-from typing import Any, Optional
+from pydantic import BaseModel
+from typing import Optional
 
 class ProductBase(BaseModel):
     product_id: int

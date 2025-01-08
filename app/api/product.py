@@ -1,36 +1,16 @@
-from app.crud.auth_crud import check_permissions, get_current_user
+from http.client import HTTPException
+from app.crud.auth_crud import get_current_user
 from app.schemas.products_schema import ProductBase, ProductCreate, ProductUpdate
-
-from config import ACCESS_TOKEN_EXPIRE_MINUTES, ALGORITHM, SECRET_KEY, SessionLocal
-from crud.auth_crud import authenticate_user, create_access_token, get_password_hash, get_user_by_email, send_verification_email
-from models.permissions_model import Permission
 from sqlalchemy.orm import Session
-from models.role_model import Role
-from models.role_permissions import RolePermission
-from models.user_model import User
+from app.utils.shared_functions import get_db, requires_permission
 from models.product_model import Products
-from schemas.user_role_schema import PermissionCreate, RoleCreate, UserCreate, Token
 from fastapi import APIRouter, Depends
-from fastapi import Depends, HTTPException, status
-# from jose import JWTError, jwt
-import jwt as pyjwt 
-import datetime
-from app.config import SessionLocal
 from typing import Any, List, Optional 
 
 
 product_router = APIRouter()
 
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
-
+# Endpoint to get a list of products with optional filtering by name or category
 @product_router.get("/products/", response_model=List[ProductBase])
 def get_products(name: Optional[str] = None, category: Optional[str] = None, db: Session = Depends(get_db)):
     query = db.query(Products)
@@ -44,7 +24,7 @@ def get_products(name: Optional[str] = None, category: Optional[str] = None, db:
     products = query.all()
     return products
 
-
+# Endpoint to get details of a single product by its ID
 @product_router.get("/products/{product_id}", response_model=ProductBase)
 def get_product(product_id: int, db: Session = Depends(get_db)):
     db_product = db.query(Products).filter(Products.product_id == product_id).first()
@@ -52,18 +32,22 @@ def get_product(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return db_product
 
+# Endpoint to create a new product
 @product_router.post("/products/", response_model=ProductBase)
 def create_product(product: ProductCreate, db: Session = Depends(get_db)):
-    demand_forecast = 121531
+    demand_forecast = product.units_sold + (product.units_sold * (product.stock_available / 1000))
+
+    optimized_price = product.cost_price + ((product.selling_price - product.cost_price) / 2) * (demand_forecast / product.units_sold)
+
     db_product = Products(name=product.name, category=product.category, cost_price=product.cost_price,
                          selling_price=product.selling_price, description=product.description,
-                         stock_available=product.stock_available, units_sold = product.units_sold, demand_forecast = demand_forecast)
+                         stock_available=product.stock_available, units_sold = product.units_sold, demand_forecast = demand_forecast, optimized_price = optimized_price)
     db.add(db_product)
     db.commit()
     db.refresh(db_product)
     return db_product
 
-
+# Endpoint to update an existing product
 @product_router.put("/products/{product_id}", response_model=ProductBase)
 def update_product(product_id: int, product: ProductUpdate, db: Session = Depends(get_db)):
     db_product = db.query(Products).filter(Products.product_id == product_id).first()
@@ -77,7 +61,7 @@ def update_product(product_id: int, product: ProductUpdate, db: Session = Depend
     db.refresh(db_product)
     return db_product
 
-
+# Endpoint to delete a product by its ID
 @product_router.delete("/products/{product_id}")
 def delete_product(product_id: int, db: Session = Depends(get_db)):
     db_product = db.query(Products).filter(Products.product_id == product_id).first()
@@ -87,7 +71,7 @@ def delete_product(product_id: int, db: Session = Depends(get_db)):
     db.commit()
     return {"message": "Product deleted successfully"}
 
-
+# Endpoint to search for products with optional sorting
 @product_router.get("/search_products/", response_model=List[ProductBase])
 def search_products(name: Optional[str] = None, category: Optional[str] = None, 
                     sort_by: Optional[str] = None, db: Session = Depends(get_db)):

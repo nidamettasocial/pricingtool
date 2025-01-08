@@ -1,18 +1,15 @@
 from fastapi import Depends, HTTPException
-# from jose import JWTError, jwt
 from typing import List
 import datetime
 from sqlalchemy.orm import Session
-# import aiosmtplib
-from email.mime.text import MIMEText
 from app.config import *
+from app.utils.constants import *
 from models.user_model import User
 from models.role_model import Role
 from models.permissions_model import Permission
 from models.role_permissions import RolePermission
 import jwt as pyjwt 
-
-
+import quopri
 
 def get_db():
     db = SessionLocal()
@@ -51,35 +48,10 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends()):
         payload = pyjwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email = payload.get("sub")
         if email is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
+            raise HTTPException(status_code=401, detail=INVALID_TOKEN)
         user = get_user_by_email(db, email)
         if user is None:
-            raise HTTPException(status_code=401, detail="User not found")
+            raise HTTPException(status_code=401, detail=USER_NOT_FOUND)
         return user
     except pyjwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
-
-def check_permissions(user: User, required_permissions: List[str], db: SessionLocal):
-    role = db.query(Role).filter(Role.name == user.role).first()
-    if not role:
-        raise HTTPException(status_code=403, detail="Role not found")
-    permissions = db.query(Permission).join(RolePermission).filter(RolePermission.role_id == role.id).all()
-    user_permissions = {permission.name for permission in permissions}
-    if not all(permission in user_permissions for permission in required_permissions):
-        raise HTTPException(status_code=403, detail="Permission denied")
-
-async def send_verification_email(email: str, token: str):
-    verification_link = f"http://yourdomain.com/verify-email?token={token}"
-    message = MIMEText(f"Click here to verify your email: {verification_link}")
-    message["Subject"] = "Verify Your Email"
-    message["From"] = "noreply@yourdomain.com"
-    message["To"] = email
-
-    # await aiosmtplib.send(
-    #     message,
-    #     hostname="smtp.your-email-provider.com",
-    #     port=587,
-    #     username="your-email@example.com",
-    #     password="your-email-password",
-    #     use_tls=True,
-    # )
+        raise HTTPException(status_code=401, detail=INVALID_TOKEN)

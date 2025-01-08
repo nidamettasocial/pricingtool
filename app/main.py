@@ -89,8 +89,4 @@ async def check_health():
 
 app.include_router(main_router, tags=["root"])
 app.include_router(auth_router, prefix="/api", tags=["auth"])
-app.include_router(product_router, prefix="/api", tags=["auth"])
-
-
-# Include the router
-# app.include_router(auth_router, prefix="/auth", tags=["auth"])
+app.include_router(product_router, prefix="/api", tags=["product"])
